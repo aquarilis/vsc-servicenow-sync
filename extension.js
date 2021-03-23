@@ -422,18 +422,30 @@ var ServiceNowSync = (function () {
         let _this = this;
 
         let quickPickOptions = _.map(tableFieldList, (obj, key) => {
-            if (key == 'CapIO Suite') {
-                return {
-                    detail: '⸌{◔◔}⸍ CapIO Automated Testing by Cerna Solutions',
-                    label: key
-                }
-            } else {
-                return key
+            return {
+                'label': tableFieldList[key]['table_display_name'] + ' (' + key + ')',
+                'detail': null,
+                'table_name': key,
+                'table_display_name': tableFieldList[key]['table_display_name']
             }
+
         });
 
-        vscode.window.showQuickPick(quickPickOptions).then((table) => {
-            if (typeof table.label !== 'undefined' && table.label == 'CapIO Suite') {
+        quickPickOptions.unshift({
+            'label': 'CapIO Suite',
+            'detail': 'CapIO Automated Testing by Cerna Solutions',
+            'table_name': 'CapIO Suite'
+        });
+
+        quickPickOptions.unshift({
+            'label': 'Custom Table',
+            'detail': 'Synchronize a table which is not listed here',
+            'table_name': 'custom_table'
+        });
+
+        vscode.window.showQuickPick(quickPickOptions).then((userSelection) => {
+
+            if (typeof userSelection.label !== 'undefined' && userSelection.label == 'CapIO Suite') {
                 _this.listRecords('x_cerso_capio_test_suite', ['sys_id', 'name'].join(','), undefined, function (result) {
 
                     if (result) {
@@ -458,26 +470,60 @@ var ServiceNowSync = (function () {
                         vscode.window.setStatusBarMessage('❌️ No Suites Found', 2000);
                     }
                 });
-            } else if (table == 'Custom Table') {
+            } else if (userSelection.label == 'Custom Table') {
                 _this._syncCustomTable();
+            } else if (typeof tableFieldList[userSelection.table_name] !== 'undefined') {
 
-            } else if (typeof tableFieldList[table] !== 'undefined') {
-                if (tableFieldList[table].length === 1) _this.createSingleFolder(table);
-                if (tableFieldList[table].length > 1) {
-                    let multiFolderChoiceQuickPick = [
-                        'Group files by Field',
-                        'Group files by Record',
-                    ];
+                let folderNameQuickPickItems = [{
+                        label: "Create folder with table display name",
+                        detail: userSelection.table_display_name,
+                        folderName: userSelection.table_display_name
+                    },
+                    {
+                        label: "Create folder with table technical name",
+                        detail: userSelection.table_name,
+                        folderName: userSelection.table_name
+                    },
 
-                    vscode.window.showQuickPick(multiFolderChoiceQuickPick).then((groupChoice) => {
-                        if (groupChoice === 'Group files by Field') {
-                            _this.createMultiFolder(table);
-                        } else {
-                            _this.createGroupedFolder(table);
+                ];
+
+                vscode.window.showQuickPick(folderNameQuickPickItems).then((folderChoice) => {
+                    let folderName = folderChoice.folderName;
+
+                    let rootFolder = vscode.workspace.workspaceFolders[0].uri._fsPath;
+                    let rootFolderPath = path.resolve(rootFolder, folderName);
+
+                    if (fs.existsSync(rootFolderPath)) {
+                        vscode.window.setStatusBarMessage('❌️ Folder ' + folderName + ' already exists', 2000);
+                    } else {
+                        
+                        if (tableFieldList[userSelection.table_name]['field_list_array'].length === 1) {
+                            _this.createSingleFolder(userSelection.table_name, folderName);
+                        } else if (tableFieldList[userSelection.table_name]['field_list_array'].length > 1) {
+                            let multiFolderChoiceQuickPick = [
+                                'Group files by Field',
+                                'Group files by Record',
+                            ];
+
+                            vscode.window.showQuickPick(multiFolderChoiceQuickPick).then((groupChoice) => {
+                                if (groupChoice === 'Group files by Field') {
+                                    _this.createMultiFolder(userSelection.table_name, folderName);
+                                } else {
+                                    _this.createGroupedFolder(userSelection.table_name, folderName);
+                                }
+                            });
                         }
-                    });
-                }
+
+                        vscode.window.setStatusBarMessage('✔️ folder ' + folderName + ' created', 2000);
+
+                    }
+                });
+
+
+            } else {
+                vscode.window.setStatusBarMessage('❌️ Error trying to sync table ' + userSelection.label, 2000);
             }
+
         });
     };
 
@@ -871,15 +917,15 @@ var ServiceNowSync = (function () {
 
     };
 
-    ServiceNowSync.prototype.createSingleFolder = function (table) {
+    ServiceNowSync.prototype.createSingleFolder = function (tableName, folderName) {
         let _this = this;
         let rootFolder = vscode.workspace.workspaceFolders[0].uri._fsPath;
-        let tableOptions = tableFieldList[table][0];
-        let folderPath = path.resolve(rootFolder, table);
+        let tableOptions = tableFieldList[tableName]['field_list_array'][0];
+        let folderPath = path.resolve(rootFolder, folderName);
         let folderSettings = {
             "files": {},
             "extension": tableOptions.extension,
-            "table": table,
+            "table": tableName,
             "display": "name",
             "field": tableOptions.field
         };
@@ -891,12 +937,8 @@ var ServiceNowSync = (function () {
 
     };
 
-    ServiceNowSync.prototype.createGroupedFolder = function (table, nameOverride) {
+    ServiceNowSync.prototype.createGroupedFolder = function (tableName, folderName) {
         let _this = this;
-        let folderName = table;
-        if (typeof nameOverride !== 'undefined') {
-            folderName = nameOverride;
-        }
 
         let rootFolder = vscode.workspace.workspaceFolders[0].uri._fsPath;
         let groupedFolderPath = path.resolve(rootFolder, folderName);
@@ -904,8 +946,8 @@ var ServiceNowSync = (function () {
         let groupedFolderSettings = {
             "grouped": true,
             "display": "name",
-            "table": table,
-            "fields": _.map(tableFieldList[table], (fieldOptions) => {
+            "table": tableName,
+            "fields": _.map(tableFieldList[tableName]['field_list_array'], (fieldOptions) => {
                 return {
                     "name": fieldOptions.field,
                     "field": fieldOptions.field,
@@ -924,15 +966,15 @@ var ServiceNowSync = (function () {
         return groupedFolderPath;
     };
 
-    ServiceNowSync.prototype.createMultiFolder = function (table) {
+    ServiceNowSync.prototype.createMultiFolder = function (tableName, folderName) {
         let _this = this;
         let rootFolder = vscode.workspace.workspaceFolders[0].uri._fsPath;
-        let rootFolderPath = path.resolve(rootFolder, table);
+        let rootFolderPath = path.resolve(rootFolder, folderName);
 
         let rootFolderSettings = {
             "multi": true,
             "display": "name",
-            "table": table
+            "table": tableName
         }
 
         if (!fs.existsSync(rootFolderPath)) {
@@ -940,12 +982,12 @@ var ServiceNowSync = (function () {
             _this.writeSettings(rootFolderPath, rootFolderSettings);
         }
 
-        _.each(tableFieldList[table], (tableOptions) => {
-            let subFolderPath = path.resolve(rootFolder, table, tableOptions.field);
+        _.each(tableFieldList[tableName]['field_list_array'], (tableOptions) => {
+            let subFolderPath = path.resolve(rootFolder, folderName, tableOptions.field);
             let folderSettings = {
                 "files": {},
                 "extension": tableOptions.extension,
-                "table": table,
+                "table": tableName,
                 "display": "name",
                 "field": tableOptions.field
             };
