@@ -206,7 +206,6 @@ var ServiceNowSync = (function () {
 
         this.listRecords("sys_app", "sys_id,name", "scope!=global", function (result) {
             if (result) {
-                records = result;
                 let quickPickItems = _.map(result, function (obj) {
                     return {
                         "detail": obj.sys_id,
@@ -306,34 +305,22 @@ var ServiceNowSync = (function () {
         let proxyUrlPrompt = {
             "ingoreFocusOut": true,
             "prompt": "Enter the Proxy URL (or leave blank to disable proxy)",
-            "validateInput": (val) => {
-                return null;
-            }
         };
 
         let proxyPortPrompt = {
             "ignoreFocusOut": true,
-            "prompt": "Enter the Proxy Port",
-            "validateInput": (val) => {
-                return null;
-            }
+            "prompt": "Enter the Proxy Port (or leave blank)",
         };
 
         let proxyUserPrompt = {
             "ignoreFocusOut": true,
             "prompt": "Enter the Proxy User (or leave blank)",
-            "validateInput": (val) => {
-                return null;
-            }
         };
 
         let proxyPasswordPrompt = {
             "ignoreFocusOut": true,
             "prompt": "Enter the Proxy Password (or leave blank)",
             "password": true,
-            "validateInput": (val) => {
-                return null;
-            }
         };
 
         vscode.window.showInputBox(proxyUrlPrompt).then((val) => {
@@ -449,7 +436,6 @@ var ServiceNowSync = (function () {
                 _this.listRecords('x_cerso_capio_test_suite', ['sys_id', 'name'].join(','), undefined, function (result) {
 
                     if (result) {
-                        records = result;
                         let quickPickItems = _.map(result, function (obj) {
                             return {
                                 "detail": obj.sys_id,
@@ -539,7 +525,6 @@ var ServiceNowSync = (function () {
             "prompt": "Enter the table name",
             "validateInput": (val) => {
                 if (val == '') return 'Please enter a valid value.';
-
                 return null;
             }
         };
@@ -549,7 +534,6 @@ var ServiceNowSync = (function () {
             "prompt": "Enter the display field name",
             "validateInput": (val) => {
                 if (val == '') return 'Please enter a valid value.';
-
                 return null;
             }
         };
@@ -559,7 +543,6 @@ var ServiceNowSync = (function () {
             "prompt": "Enter the field to sync",
             "validateInput": (val) => {
                 if (val == '') return 'Please enter a valid value.';
-
                 return null;
             }
         };
@@ -569,7 +552,6 @@ var ServiceNowSync = (function () {
             "prompt": "Enter the file type",
             "validateInput": (val) => {
                 if (val == '') return 'Please enter a valid value.';
-
                 return null;
             }
         };
@@ -619,7 +601,6 @@ var ServiceNowSync = (function () {
         let folder = selectedFolder._fsPath;
         let settings = _this.readSettings(folder);
         let subSettings;
-        let records = null;
 
         if (!settings) throw new ConfigException('No Folder Settings Found')
 
@@ -663,7 +644,6 @@ var ServiceNowSync = (function () {
 
         function displayRecordList(result) {
             if (result) {
-                records = result;
                 let quickPickItems = _.map(result, recordListToQuickPickItems);
                 if (settings.grouped) {
                     vscode.window.showQuickPick(quickPickItems).then(createGroupedFiles);
@@ -711,7 +691,6 @@ var ServiceNowSync = (function () {
         }
 
         function createFiles(record) {
-            let rootFolder = vscode.workspace.workspaceFolders[0].uri._fsPath;
             let folderPath = path.resolve(folder, sanitize(record[settings.display], {
                 replacement: '_'
             }));
