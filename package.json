@@ -108,6 +108,13 @@
         "command": "sn_sync.evalScript",
         "title": "SN Sync: Execute file in background script"
       }
+    ],
+    "keybindings": [
+        {
+            "command": "sn_sync.evalScript",
+            "key": "win+k",
+            "mac": "cmd+k"
+        }
     ]
   },
   "scripts": {
