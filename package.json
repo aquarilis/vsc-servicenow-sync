@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/salcosta/vsc-servicenow-sync.git"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "publisher": "aquarilis",
   "engines": {
