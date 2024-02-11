@@ -5,9 +5,9 @@
   "description": "Sync records from ServiceNow to local files using VSC - aquarilis'",
   "repository": {
     "type": "git",
-    "url": "https://github.com/salcosta/vsc-servicenow-sync.git"
+    "url": "https://github.com/aquarilis/vsc-servicenow-sync-2021.git"
   },
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "publisher": "aquarilis",
   "engines": {
