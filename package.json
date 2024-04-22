@@ -2,7 +2,7 @@
   "name": "servicenow-sync-2024",
   "author": "forked from Sal Costa <costas0811@hotmail.com> (http://anerrantprogrammer.com",
   "displayName": "LMA ServiceNow Sync 2024",
-  "description": "Sync records from ServiceNow to local files using VSC - aquarilis'",
+  "description": "Sync records from ServiceNow to local files using Visual Studio Code - Aquarilis",
   "repository": {
     "type": "git",
     "url": "https://github.com/aquarilis/vsc-servicenow-sync-2021.git"
